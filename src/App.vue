@@ -1,13 +1,20 @@
 <template>
   <div id="app">
-    <router-view></router-view>
+    <div class="content">
+      <ul>
+        <li>
+          <router-link to="/home">Home</router-link>
+        </li>
+        <li>
+          <router-link to="/about">About</router-link>
+        </li>
+      </ul>
+      <router-view></router-view>
+    </div>
   </div>
 </template>
 <script>
-import RouterView from '@/myRouter/components/view';
-
 export default {
-  components: { RouterView },
   data () {
     return {};
   },
@@ -16,7 +23,12 @@ export default {
   methods: {}
 };
 </script>
-<style scoped>
+<style>
 #app {
+  display: flex;
+  justify-content: center;
+}
+.router-link-active {
+  color: #ea4335;
 }
 </style>

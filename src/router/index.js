@@ -3,7 +3,7 @@ import VueRouter from 'vue-router';
 import Home from '../views/Home.vue';
 import About from '@/views/About';
 
-// Vue.use(VueRouter);
+Vue.use(VueRouter);
 const routes = [
   {
     path: '/home',
@@ -13,7 +13,11 @@ const routes = [
   {
     path: '/about',
     name: 'About',
-    component: About
+    component: About,
+    children: [
+      { path: 'a', name: 'AboutA', component: { render: (h) => <div>This is about/a</div> } },
+      { path: 'b', name: 'AboutB', component: { render: (h) => <div>This is about/b</div> } }
+    ]
   }
 ];
 
