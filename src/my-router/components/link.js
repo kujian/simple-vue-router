@@ -16,11 +16,11 @@ export default {
     }
   },
   render () {
+    // How to add current active class ?
     return (
       <this.tag
         onClick={this.onClick}
         href="javascript:;"
-        {/*How to add current active class ? */}
         class={{ 'router-link-active': this.$route.path === this.to }}
       >
         {this.$slots.default}
