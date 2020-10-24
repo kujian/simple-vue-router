@@ -13,3 +13,14 @@
 * `router-link`组件
 * `$router.push`方法
 * 路由守卫(`Navigation Guards`)
+
+
+#### 问题记录
+为什么通过`defineProperty`可以使属性具有响应性？
+```javascript
+Object.defineProperty(this, '$route', {
+  get () {
+    return this._rootRouter.$route;
+  }
+});
+```

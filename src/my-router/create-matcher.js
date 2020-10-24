@@ -3,7 +3,7 @@ import createRouteMap from '@/my-router/create-route-map';
 export const createRoute = (route, path) => {
   const matched = [];
   while (route) {
-    matched.push(route);
+    matched.unshift(route);
     route = route.parent;
   }
   return {

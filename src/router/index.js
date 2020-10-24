@@ -15,8 +15,8 @@ const routes = [
     name: 'About',
     component: About,
     children: [
-      { path: 'a', name: 'AboutA', component: { render: (h) => <div>This is about/a</div> } },
-      { path: 'b', name: 'AboutB', component: { render: (h) => <div>This is about/b</div> } }
+      { path: 'a', name: 'AboutA', component: { name: 'AboutA', render: (h) => <div>This is about/a</div> } },
+      { path: 'b', name: 'AboutB', component: { name: 'AboutB', render: (h) => <div>This is about/b</div> } }
     ]
   }
 ];

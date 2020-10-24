@@ -5,11 +5,18 @@ import createMatcher from '@/my-router/create-matcher';
 class VueRouter {
   constructor (options) {
     this.matcher = createMatcher(options.routes);
-    this.hashHistory = new HashHistory(this);
+    this.history = new HashHistory(this);
+    this.app = undefined;
   }
 
-  init () {
-    this.hashHistory.listenEvent();
+  init (app) {
+    this.app = app;
+    this.history.onHashchange();
+    this.history.listenEvent();
+  }
+
+  push (path) {
+    location.hash = path;
   }
 
   match (path) {

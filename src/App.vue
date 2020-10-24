@@ -1,25 +1,26 @@
 <template>
   <div id="app">
-    <!--    <div class="content">-->
-    <!--      <ul>-->
-    <!--        <li>-->
-    <!--          <router-link to="/home">Home</router-link>-->
-    <!--        </li>-->
-    <!--        <li>-->
-    <!--          <router-link to="/about">About</router-link>-->
-    <!--        </li>-->
-    <!--      </ul>-->
-    <!--      <router-view></router-view>-->
-    <!--    </div>-->
+    <div class="content">
+      <ul>
+        <li>
+          <router-link to="/home">Home</router-link>
+        </li>
+        <li>
+          <router-link to="/about">About</router-link>
+        </li>
+      </ul>
+      <router-view></router-view>
+    </div>
   </div>
 </template>
 <script>
 export default {
+  name: 'App',
   data () {
     return {};
   },
   mounted () {
-    console.log('$router', this.$router);
+    console.log(this);
   },
   methods: {}
 };
