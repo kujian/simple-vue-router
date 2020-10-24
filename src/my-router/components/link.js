@@ -1,5 +1,3 @@
-import { getHash } from '@/my-router/util';
-
 export default {
   props: {
     to: {
