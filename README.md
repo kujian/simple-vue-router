@@ -185,7 +185,8 @@ class HashHistory {
 }
 ```
 
-在`onHashchange`方法中为了找到当前的路由记录，调用了`VueRouter`的`match`方法，而`match`方法放到了`create-matcher`中来实现: 
+### 匹配路由记录
+为了找到当前的路由记录，调用了`VueRouter`的`match`方法，而`match`方法放到了`create-matcher`中来实现: 
 ```javascript
 // create-matcher.js
 export const createRoute = (route, path) => {
@@ -278,7 +279,7 @@ const pathMap = {
 }
 ```
 
-需要注意的是对象中的`matched`方法，它是为了支持嵌套路由而构造的数组。由于嵌套路由会本质上是`router-view`组件的嵌套，所以可以根据`router-view`在组件中的深度在`matched`中找到对应的匹配项，之后会在实现`router-view`时详细讲解。
+需要注意的是对象中的`matched`方法，它是为了支持嵌套路由而构造的数组。由于嵌套路由会本质上是`router-view`组件的嵌套，所以可以根据`router-view`在组件中的深度在`matched`中找到对应的匹配项。
 
 现在我们回到`hashHistory`的`onHashchange`方法，它会调用`VueRouter`实例的`match`方法，代码如下：
 ```javascript
@@ -323,7 +324,7 @@ class HashHistory {
 }
 ```
 
-为了让方便用户访问，并且让其具有响应性，会通过`Vue.util.defineReactive`来为`vue`的根实例提供响应性的`$route`属性，并在每次页面初始化以及路径更新时更新`$route`: 
+为了方便用户访问当前路由信息，并且让其具有响应性，会通过`Vue.util.defineReactive`来为`vue`的根实例提供响应性的`$route`属性，并在每次页面初始化以及路径更新时更新`$route`: 
 ```javascript
 class HashHistory {
   constructor (router) {
@@ -334,6 +335,7 @@ class HashHistory {
     this.current = createRoute(null, '/');
     this.onHashchange = this.onHashchange.bind(this);
   }
+  // some code ...
   onHashchange () {
     const path = getHash();
     const route = this.router.match(path);
