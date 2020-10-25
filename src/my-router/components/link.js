@@ -14,8 +14,7 @@ export default {
         return item.path;
       });
       const index = matchedPaths.indexOf(this.$route.path);
-      const paths = matchedPaths.slice(0, index + 1);
-      return paths.includes(this.to);
+      return matchedPaths.slice(0, index + 1).includes(this.to);
     }
   },
   methods: {
