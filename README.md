@@ -379,3 +379,37 @@ const install = (Vue) => {
 到这里，我们已经可以在地址切换时获取到对应的路由信息，接下来我们实现`router-view`来展示对应的组件。
 
 ### 实现`router-view`组件
+`router-view`组件需要展示当前匹配的`hash`所对应的`component`，这里采用函数式组件来实现： 
+```javascript
+export default {
+  name: 'RouterView',
+  render (h) {
+    // 记录组件的深度，默认为0
+    let depth = 0;
+    const route = this.$parent.$route;
+    let parent = this.$parent;
+    // 递归查找父组件，如果父组件是RouterView组件，深度++
+    // 最终的深度即为路由的嵌套层数
+    while (parent) {
+      if (parent.$options.name === 'RouterView') {
+        depth++;
+      }
+      parent = parent.$parent;
+    }
+    // 根据深度从matched中找到对应的记录
+    const record = route.matched[depth];
+    if (record) { // /about会匹配About页面，会渲染About中的router-view,此时record为undefined
+      return h(record.component);
+    } else {
+      return h();
+    }
+  }
+};
+```
+这里必须要为组件指定`name`属性，方便进行递归查找，进行深度标识。
+
+到这里，我们为路由信息中添加的`matched`数组，终于派上了用场，其与`router-view`组件的深度`depth`进行巧妙结合，最终展示出了所有匹配到的路由组件。
+
+### 实现`router-link`组件
+
+### 路由`beforeEach`钩子
