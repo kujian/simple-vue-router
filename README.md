@@ -123,3 +123,257 @@ const install = (Vue) => {
 * 为所有组件的实例添加`_rootRouter`，值为根实例，方便获取根实例上的属性和方法
 * 在根实例执行`beforeCreate`钩子时执行`VueRouter`实例的`init`方法
 * 为所有组件的实例添加`$router`属性
+
+### `hashchange`事件
+`vue-router`在`hash`模式下可以不刷新页面进行页面切换，原理其实是利用页面地址`hash`值发生改变不会刷新页面，并且会触发`hashchange`事件。
+
+在`history`目录下，新建`hash.js`来存放`hash`值变化，组件进行切换的逻辑： 
+```javascript
+import { getHash } from '@/my-router/util';
+import { createRoute } from '@/my-router/create-matcher';
+
+const ensureSlash = () => {
+  if (!location.hash) {
+    location.hash = '/';
+  }
+};
+
+class HashHistory {
+  constructor (router) {
+    // pass instance of VueRoute class, can call methods and properties of instance directly
+    this.router = router;
+    // 当前的路由记录,在current更新后，由于其不具有响应性，所以尽管值更新了，但是不会触发页面渲染
+    // 需要将其定义为响应式的数据
+    this.onHashchange = this.onHashchange.bind(this);
+    // 默认hash值为'/'
+    ensureSlash();
+  }
+
+  listenEvent () {
+    window.addEventListener('hashchange', this.onHashchange);
+  }
+  
+  onHashchange () {
+  }
+}
+export default HashHistory;
+```
+
+在`VueRouter`实例执行`init`方法时，进行事件监听： 
+```javascript
+class VueRouter {
+  constructor (options) {
+    this.history = new HashHistory(this);
+  }
+
+  init (app) {
+    // 第一次渲染时也需要手动执行一次onHashchange方法
+    this.history.onHashchange();
+    this.history.listenEvent();
+  }
+}
+```
+
+在`onHashchange`方法中，需要根据当前页面地址的`hash`值来找到其对应的路由记录：
+```javascript
+class HashHistory {
+  // ...
+  onHashchange () {
+    const path = getHash();
+    const route = this.router.match(path);
+  }
+}
+```
+
+在`onHashchange`方法中为了找到当前的路由记录，调用了`VueRouter`的`match`方法，而`match`方法放到了`create-matcher`中来实现: 
+```javascript
+// create-matcher.js
+export const createRoute = (route, path) => {
+  const matched = [];
+  // 递归route的所有父路由，生成matched数组，并和path一起返回，作为当前的路由记录
+  while (route) {
+    matched.unshift(route);
+    route = route.parent;
+  }
+  return {
+    path,
+    matched
+  };
+};
+
+function createMatcher (routes) {
+  const pathMap = createRouteMap(routes);
+  // need to get all matched route, then find current routes by matched and router-view
+  const match = (path) => {
+    const route = pathMap[path];
+    return createRoute(route, path);
+  };
+  return {
+    match
+  };
+}
+```
+```javascript
+// create-route-map.js
+function addRouteRecord (routes, pathMap, parent) {
+  routes.forEach(route => {
+    const { path, children, ...rest } = route;
+    // 拼接子路由path
+    const normalizedPath = parent ? parent.path + '/' + path : path;
+    // 将parent也放入到属性中，方便之后生成matched数组
+    pathMap[normalizedPath] = { ...rest, path: normalizedPath, parent };
+    if (children) {
+      // 继续遍历子路由
+      addRouteRecord(children, pathMap, route);
+    }
+  });
+}
+
+const createRouteMap = (routes, pathMap = {}) => {
+  addRouteRecord(routes, pathMap);
+  return pathMap;
+};
+```
+
+`createMatcher`会通过`createRouteMap`生成`hash`值和路由的映射关系：
+```javascript
+const pathMap = {
+  '/about': {
+    path: '/about',
+    name: 'About',
+    children: [
+      // ...  
+    ],
+    parent: undefined
+  }
+  // ...  
+} 
+```
+这样我们可以很方便的通过`hash`值来获取路由信息。
+
+最终我们调用`match`方法得到的路由记录结构如下：
+```javascript
+{
+  "path": "/about/a",
+  "matched": [
+    {
+      "path": "/about",
+      "name": "About",
+      "component": About,
+      "children": [
+        {
+          "path": "a",
+          "name": "AboutA",
+          "component": A
+        },
+        {
+          "path": "b",
+          "name": "AboutB",
+          "component": B
+        }
+      ]
+    },
+    // ...  
+  ]
+}
+```
+
+需要注意的是对象中的`matched`方法，它是为了支持嵌套路由而构造的数组。由于嵌套路由会本质上是`router-view`组件的嵌套，所以可以根据`router-view`在组件中的深度在`matched`中找到对应的匹配项，之后会在实现`router-view`时详细讲解。
+
+现在我们回到`hashHistory`的`onHashchange`方法，它会调用`VueRouter`实例的`match`方法，代码如下：
+```javascript
+class VueRouter {
+  constructor (options) {
+    this.matcher = createMatcher(options.routes);
+    this.history = new HashHistory(this);
+  }
+
+  init (app) {
+    this.history.onHashchange();
+    this.history.listenEvent();
+  }
+
+  match (path) {
+    return this.matcher.match(path);
+  }
+}
+```
+在`hashHistory`中将其赋值给实例中的`current`属性： 
+```javascript
+class HashHistory {
+  constructor (router) {
+    // pass instance of VueRoute class, can call methods and properties of instance directly
+    this.router = router;
+    // 当前的路由记录,在current更新后，由于其不具有响应性，所以尽管值更新了，但是不会触发页面渲染
+    // 需要将其定义为响应式的数据
+    this.current = createRoute(null, '/');
+    this.onHashchange = this.onHashchange.bind(this);
+    ensureSlash();
+  }
+
+  listenEvent () {
+    window.addEventListener('hashchange', this.onHashchange);
+  }
+
+  onHashchange () {
+    const path = getHash();
+    const route = this.router.match(path);
+    this.current = route
+  }
+}
+```
+
+为了让方便用户访问，并且让其具有响应性，会通过`Vue.util.defineReactive`来为`vue`的根实例提供响应性的`$route`属性，并在每次页面初始化以及路径更新时更新`$route`: 
+```javascript
+class HashHistory {
+  constructor (router) {
+    // pass instance of VueRoute class, can call methods and properties of instance directly
+    this.router = router;
+    // 当前的路由记录,在current更新后，由于其不具有响应性，所以尽管值更新了，但是不会触发页面渲染
+    // 需要将其定义为响应式的数据
+    this.current = createRoute(null, '/');
+    this.onHashchange = this.onHashchange.bind(this);
+  }
+  onHashchange () {
+    const path = getHash();
+    const route = this.router.match(path);
+    // 将当前路由赋值给根实例，app会在router.init方法中进行初始化
+    this.router.app.$route = this.current = route
+  }
+}
+```
+在`install`方法中为根实例定义`$route`属性，并将所有子组件实例的`$route`属性赋值为根实例的`$route`属性：  
+```javascript
+const install = (Vue) => {
+  Vue.mixin({
+    beforeCreate () {
+      const { router } = this.$options;
+      // mount $router property for all components
+      if (router) {
+        this._rootRouter = this;
+        this.$router = router;
+        // 定义响应性$route属性
+        Vue.util.defineReactive(this, '$route', this.$router.history.current);
+        router.init(this);
+      } else {
+        this._rootRouter = this.$parent && this.$parent._rootRouter;
+        if (this._rootRouter) {
+          this.$router = this._rootRouter.$router;
+          // 这样直接赋值会导致引用刷新而无法改变$route
+          // this.$route = this._rootRouter.$route;
+          // 获取根组件实例的$route属性，其具有响应性
+          Object.defineProperty(this, '$route', {
+            get () {
+              return this._rootRouter.$route;
+            }
+          });
+        }
+      }
+    }
+  });
+};
+```
+
+到这里，我们已经可以在地址切换时获取到对应的路由信息，接下来我们实现`router-view`来展示对应的组件。
+
+### 实现`router-view`组件
