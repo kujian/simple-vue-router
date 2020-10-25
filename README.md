@@ -411,5 +411,59 @@ export default {
 到这里，我们为路由信息中添加的`matched`数组，终于派上了用场，其与`router-view`组件的深度`depth`进行巧妙结合，最终展示出了所有匹配到的路由组件。
 
 ### 实现`router-link`组件
+`router-link`主要支持以下几个功能：  
+* 进行路由跳转
+* 通过传入的`tag`渲染不同标签
+* 为当前激活的`router-link`添加`router-link-active`类名
+
+在页面中`vue-router`也支持通过`router-link`来进行路由跳转，其实现比较简单：
+```javascript
+export default {
+  props: {
+    to: {
+      type: String,
+    },
+    tag: {
+      type: String,
+      default: () => 'a'
+    }
+  },
+  computed: {
+    active () {
+      return this.$route.matched.map(item => item.path).includes(this.to);
+    }
+  },
+  methods: {
+    onClick () {
+      this.$router.push(this.to);
+    }
+  },
+  render () {
+    return (
+      <this.tag
+        onClick={this.onClick}
+        href="javascript:;"
+        class={{ 'router-link-active': this.active }}
+      >
+        {this.$slots.default}
+      </this.tag>
+    );
+  }
+};
+```
+`router-link`可以接受`tag`来渲染不同的标签，默认会渲染`a`标签。当点击`router-link`的时候，其内部会调用`VueRouter`实例的`push`方法：
+```javascript
+class VueRouter {
+  // some code ...
+  push (path) {
+    location.hash = path;
+  }
+  // some code ...
+}
+// some code ...
+```
+`push`方法会切换页面的`hash`，当`hash`发生变化后，就会触发`onHashchange`事件，重新通过`path`匹配对应的路由信息。
+
+在代码中我们通过计算属性`active`来计算当前的`router-link`是否激活，需要注意的是当子路由激活时父路由也会激活。如果`matched`的`path`属性组成的数组中包含`this.to`，说明该`router-link`被激活。用户可以通过`router-link-active`类来设置激活样式。
 
 ### 路由`beforeEach`钩子
