@@ -7,6 +7,7 @@ class VueRouter {
     this.matcher = createMatcher(options.routes);
     this.history = new HashHistory(this);
     this.app = undefined;
+    this.beforeEachs = [];
   }
 
   init (app) {
@@ -17,6 +18,11 @@ class VueRouter {
 
   push (path) {
     location.hash = path;
+  }
+
+  // cache in global, execute before get matched route record
+  beforeEach (fn) {
+    this.beforeEachs.push(fn);
   }
 
   match (path) {

@@ -25,7 +25,18 @@ class HashHistory {
   onHashchange () {
     const path = getHash();
     const route = this.router.match(path);
-    this.router.app.$route = this.current = route;
+    // 当用户手动调用next时，会执行下一个beforeEach钩子，在所有的钩子执行完毕后，会更新当前路由信息
+    const next = (index) => {
+      const { beforeEachs } = this.router;
+      if (index === beforeEachs.length) {
+        //update route after executed all beforeEach hook
+        this.router.app.$route = this.current = route;
+        return;
+      }
+      const hook = beforeEachs[index];
+      hook(route, this.current, () => next(index + 1));
+    };
+    next(0);
   }
 }
 
