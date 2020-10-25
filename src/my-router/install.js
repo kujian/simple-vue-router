@@ -15,8 +15,8 @@ const install = (Vue) => {
         this._rootRouter = this.$parent && this.$parent._rootRouter;
         if (this._rootRouter) {
           this.$router = this._rootRouter.$router;
-          // this.$route = this._rootRouter.$route
-          // why this will has reactive ?
+          // reference will change when assign value to this._rootRouter.$route
+          // this.$route = this._rootRouter.$route;
           Object.defineProperty(this, '$route', {
             get () {
               return this._rootRouter.$route;
