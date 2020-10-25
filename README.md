@@ -142,7 +142,7 @@ class HashHistory {
   constructor (router) {
     // pass instance of VueRoute class, can call methods and properties of instance directly
     this.router = router;
-    // 当前的路由记录,在current更新后，由于其不具有响应性，所以尽管值更新了，但是不会触发页面渲染
+    // 当前的路由信息,在current更新后，由于其不具有响应性，所以尽管值更新了，但是不会触发页面渲染
     // 需要将其定义为响应式的数据
     this.onHashchange = this.onHashchange.bind(this);
     // 默认hash值为'/'
@@ -174,7 +174,7 @@ class VueRouter {
 }
 ```
 
-在`onHashchange`方法中，需要根据当前页面地址的`hash`值来找到其对应的路由记录：
+在`onHashchange`方法中，需要根据当前页面地址的`hash`值来找到其对应的路由信息：
 ```javascript
 class HashHistory {
   // ...
@@ -185,13 +185,13 @@ class HashHistory {
 }
 ```
 
-### 匹配路由记录
-为了找到当前的路由记录，调用了`VueRouter`的`match`方法，而`match`方法放到了`create-matcher`中来实现: 
+### 匹配路由信息
+为了找到当前的路由信息，调用了`VueRouter`的`match`方法，而`match`方法放到了`create-matcher`中来实现: 
 ```javascript
 // create-matcher.js
 export const createRoute = (route, path) => {
   const matched = [];
-  // 递归route的所有父路由，生成matched数组，并和path一起返回，作为当前的路由记录
+  // 递归route的所有父路由，生成matched数组，并和path一起返回，作为当前的路由信息
   while (route) {
     matched.unshift(route);
     route = route.parent;
@@ -252,7 +252,7 @@ const pathMap = {
 ```
 这样我们可以很方便的通过`hash`值来获取路由信息。
 
-最终我们调用`match`方法得到的路由记录结构如下：
+最终我们调用`match`方法得到的路由信息结构如下：
 ```javascript
 {
   "path": "/about/a",
@@ -305,7 +305,7 @@ class HashHistory {
   constructor (router) {
     // pass instance of VueRoute class, can call methods and properties of instance directly
     this.router = router;
-    // 当前的路由记录,在current更新后，由于其不具有响应性，所以尽管值更新了，但是不会触发页面渲染
+    // 当前的路由信息,在current更新后，由于其不具有响应性，所以尽管值更新了，但是不会触发页面渲染
     // 需要将其定义为响应式的数据
     this.current = createRoute(null, '/');
     this.onHashchange = this.onHashchange.bind(this);
@@ -330,7 +330,7 @@ class HashHistory {
   constructor (router) {
     // pass instance of VueRoute class, can call methods and properties of instance directly
     this.router = router;
-    // 当前的路由记录,在current更新后，由于其不具有响应性，所以尽管值更新了，但是不会触发页面渲染
+    // 当前的路由信息,在current更新后，由于其不具有响应性，所以尽管值更新了，但是不会触发页面渲染
     // 需要将其定义为响应式的数据
     this.current = createRoute(null, '/');
     this.onHashchange = this.onHashchange.bind(this);
@@ -467,3 +467,73 @@ class VueRouter {
 在代码中我们通过计算属性`active`来计算当前的`router-link`是否激活，需要注意的是当子路由激活时父路由也会激活。如果`matched`的`path`属性组成的数组中包含`this.to`，说明该`router-link`被激活。用户可以通过`router-link-active`类来设置激活样式。
 
 ### 路由`beforeEach`钩子
+`vue-router`支持我们在进入页面之前执行一些逻辑：
+```javascript
+// some code ....
+const router = new VueRouter({
+  routes
+});
+// 在每次进入页面之前，都会先执行所有的beforeEach中的回调函数
+router.beforeEach((to, from, next) => {
+  console.log(1);
+  setTimeout(() => {
+    // 调用下一个回调函数
+    next();
+  }, 1000);
+});
+router.beforeEach((to, from, next) => {
+  console.log(2);
+  next();
+});
+``` 
+在每次进入页面之前，`vue-router`会先执行`beforeEach`中的回调函数，并且只有当用户调用回调函数中传入的`next`函数后，才会执行之后的`beforeEach`中的回调。
+
+当所有回调执行完毕后，调用`next`函数会更新路由信息，通过`router-view`来显示对应的组件。其实现如下：  
+```javascript
+// my-router/index.js
+class VueRouter {
+  constructor (options) {
+    // some code ...
+    this.beforeEachs = [];
+  }
+
+  // cache in global, execute before get matched route record
+  beforeEach (fn) {
+    this.beforeEachs.push(fn);
+  }
+}
+
+// my-router/history/hash.js
+class HashHistory {
+  // some code ...
+  onHashchange () {
+    const path = getHash();
+    const route = this.router.match(path);
+    // 当用户手动调用next时，会执行下一个beforeEach钩子，在所有的钩子执行完毕后，会更新当前路由信息
+    const next = (index) => {
+      const { beforeEachs } = this.router;
+      if (index === beforeEachs.length) {
+        //update route after executed all beforeEach hook
+        this.router.app.$route = this.current = route;
+        return;
+      }
+      const hook = beforeEachs[index];
+      hook(route, this.current, () => next(index + 1));
+    };
+    next(0);
+  }
+}
+```
+上述代码的执行流程如下：
+* 将`beforeEach`中传入的函数放到全局的数组`beforeEachs`中
+* 在根据路径匹配最新的路由信息时，执行`beforeEachs`中存储的函数
+* 根据一个递增的`index`来读取`beforeEachs`中的函数，执行时传入新的路由信息`route`、旧的路由信息`current`，以及需要用户调用的回调
+* 当用户调用回调后，`index+1`继续执行`next`函数，进而执行`beforeEachs`中的下一个函数
+* 当执行完`beforeEachs`中的所有函数后，为`$route`赋值最新的路由信息
+
+庆祝一下🤩，这里我们已经完成了文章开头定下的所有目标！
+
+### 结语
+希望在读完文章之后，能让读者对`vue-router`的底层实现有更深入的了解，明白日常使用的`API`是怎么来的，从而更加熟练的使用`vue-router`。
+
+最后，如果文章有帮到你的话，希望能点赞鼓励一下作者🤣。

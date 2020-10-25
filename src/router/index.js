@@ -24,7 +24,6 @@ const routes = [
 const router = new VueRouter({
   routes
 });
-/*
 router.beforeEach((to, from, next) => {
   console.log(1);
   setTimeout(() => {
@@ -35,6 +34,5 @@ router.beforeEach((to, from, next) => {
   console.log(2);
   next();
 });
-*/
 
 export default router;
