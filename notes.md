@@ -11,6 +11,7 @@
 * 监听`hash`值变化，并重新匹配对应的组件
 * `router-view`组件
 * `router-link`组件
+  * 添加激活路由`class`
 * `$router.push`方法
 * 路由守卫(`Navigation Guards`)
 
