@@ -126,7 +126,7 @@ const install = (Vue) => {
 * 为所有组件添加`$route`属性，值为当前的路由信息(之后会介绍它的由来)
 
 ### `hashchange`事件
-`vue-router`在`hash`模式下可以不刷新页面进行页面切换，原理其实是利用页面地址`hash`值发生改变不会刷新页面，并且会触发`hashchange`事件。
+`vue-router`在`hash`模式下可以利用`hash`值的切换来渲染对应的组件，原理其实是利用页面地址`hash`值发生改变不会刷新页面，并且会触发`hashchange`事件。
 
 在`history`目录下，新建`hash.js`来存放`hash`值变化，组件进行切换的逻辑： 
 ```javascript
@@ -141,10 +141,8 @@ const ensureSlash = () => {
 
 class HashHistory {
   constructor (router) {
-    // pass instance of VueRoute class, can call methods and properties of instance directly
     this.router = router;
-    // 当前的路由信息,在current更新后，由于其不具有响应性，所以尽管值更新了，但是不会触发页面渲染
-    // 需要将其定义为响应式的数据
+    // 绑定this指向
     this.onHashchange = this.onHashchange.bind(this);
     // 默认hash值为'/'
     ensureSlash();
@@ -160,7 +158,7 @@ class HashHistory {
 export default HashHistory;
 ```
 
-在`VueRouter`实例执行`init`方法时，进行事件监听： 
+在`VueRouter`实例执行`init`方法时，监听`hashchange`事件： 
 ```javascript
 class VueRouter {
   constructor (options) {
@@ -178,7 +176,7 @@ class VueRouter {
 在`onHashchange`方法中，需要根据当前页面地址的`hash`值来找到其对应的路由信息：
 ```javascript
 class HashHistory {
-  // ...
+  // some code ...
   onHashchange () {
     const path = getHash();
     const route = this.router.match(path);
@@ -187,7 +185,7 @@ class HashHistory {
 ```
 
 ### 匹配路由信息
-为了找到当前的路由信息，调用了`VueRouter`的`match`方法，而`match`方法放到了`create-matcher`中来实现: 
+为了找到当前的路由信息，`HashHistory`中调用了`VueRouter`的`match`方法。`match`方法放到了`create-matcher.js`中来实现: 
 ```javascript
 // create-matcher.js
 export const createRoute = (route, path) => {
@@ -280,7 +278,7 @@ const pathMap = {
 }
 ```
 
-需要注意的是对象中的`matched`方法，它是为了支持嵌套路由而构造的数组。由于嵌套路由会本质上是`router-view`组件的嵌套，所以可以根据`router-view`在组件中的深度在`matched`中找到对应的匹配项。
+需要注意的是对象中的`matched`属性，它里面存放的是当前`hash`匹配的所有路由信息组成数组。在实现嵌套路由时会用到`matched`数组，因为嵌套路由本质上是`router-view`组件的嵌套，所以可以根据`router-view`在组件中的深度在`matched`中找到对应的匹配项，然后进行展示。
 
 现在我们回到`hashHistory`的`onHashchange`方法，它会调用`VueRouter`实例的`match`方法，代码如下：
 ```javascript
