@@ -487,7 +487,7 @@ router.beforeEach((to, from, next) => {
 ``` 
 在每次进入页面之前，`vue-router`会先执行`beforeEach`中的回调函数，并且只有当用户调用回调函数中传入的`next`函数后，才会执行之后的`beforeEach`中的回调。
 
-当所有`beforeEach`中的回调执行完毕后，调用`next`函数会更新路由信息，通过`router-view`来显示对应的组件。其实现如下：  
+当所有`beforeEach`中的回调执行完毕后，调用`next`函数会更新路由信息，然后通过`router-view`来显示对应的组件。其实现如下：  
 ```javascript
 // my-router/index.js
 class VueRouter {
@@ -525,8 +525,8 @@ class HashHistory {
 ```
 上述代码的执行流程如下：
 * 将`beforeEach`中传入的函数放到全局的数组`beforeEachs`中
-* 在根据路径匹配最新的路由信息时，执行`beforeEachs`中存储的函数
-* 根据一个递增的`index`来读取`beforeEachs`中的函数，执行时传入新的路由信息`route`、旧的路由信息`current`，以及需要用户调用的回调
+* 在根据路径匹配最新的路由信息时，先执行`beforeEachs`中存储的函数
+* 根据一个递增的`index`来读取`beforeEachs`中的函数，执行时传入新的路由信息`route`、旧的路由信息`this.current`，以及需要用户调用的回调函数
 * 当用户调用回调后，`index+1`继续执行`next`函数，进而执行`beforeEachs`中的下一个函数
 * 当执行完`beforeEachs`中的所有函数后，为`$route`赋值最新的路由信息
 
