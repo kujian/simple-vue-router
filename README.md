@@ -122,7 +122,8 @@ const install = (Vue) => {
 在`install`方法中做了如下几件事：  
 * 为所有组件的实例添加`_rootRouter`，值为根实例，方便获取根实例上的属性和方法
 * 在根实例执行`beforeCreate`钩子时执行`VueRouter`实例的`init`方法
-* 为所有组件的实例添加`$router`属性
+* 为所有组件的实例添加`$router`属性，值为`VueRouter`实例
+* 为所有组件添加`$route`属性，值为当前的路由信息(之后会介绍它的由来)
 
 ### `hashchange`事件
 `vue-router`在`hash`模式下可以不刷新页面进行页面切换，原理其实是利用页面地址`hash`值发生改变不会刷新页面，并且会触发`hashchange`事件。
