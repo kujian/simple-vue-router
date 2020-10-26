@@ -278,7 +278,7 @@ const pathMap = {
 }
 ```
 
-需要注意的是对象中的`matched`属性，它里面存放的是当前`hash`匹配的所有路由信息组成数组。在实现嵌套路由时会用到`matched`数组，因为嵌套路由本质上是`router-view`组件的嵌套，所以可以根据`router-view`在组件中的深度在`matched`中找到对应的匹配项，然后进行展示。
+需要注意的是对象中的`matched`属性，它里面存放的是当前`hash`匹配的所有路由信息组成的数组。在实现嵌套路由时会用到`matched`数组，因为嵌套路由本质上是`router-view`组件的嵌套，所以可以根据`router-view`在组件中的深度在`matched`中找到对应的匹配项，然后进行展示。
 
 现在我们回到`hashHistory`的`onHashchange`方法，它会调用`VueRouter`实例的`match`方法，代码如下：
 ```javascript
@@ -461,12 +461,12 @@ class VueRouter {
 }
 // some code ...
 ```
-`push`方法会切换页面的`hash`，当`hash`发生变化后，就会触发`onHashchange`事件，重新通过`path`匹配对应的路由信息。
+`push`方法会切换页面的`hash`，当`hash`发生变化后，就会触发`hashchange`事件，执行事件处理函数`onHashchange`，重新通过`path`匹配对应的路由信息。
 
 在代码中我们通过计算属性`active`来计算当前的`router-link`是否激活，需要注意的是当子路由激活时父路由也会激活。如果`matched`的`path`属性组成的数组中包含`this.to`，说明该`router-link`被激活。用户可以通过`router-link-active`类来设置激活样式。
 
 ### 路由`beforeEach`钩子
-`vue-router`支持我们在进入页面之前执行一些逻辑：
+在日常开发中，经常会用到`beforeEach`全局前置守卫，让我们在进入页面之前执行一些逻辑：
 ```javascript
 // some code ....
 const router = new VueRouter({
@@ -487,7 +487,7 @@ router.beforeEach((to, from, next) => {
 ``` 
 在每次进入页面之前，`vue-router`会先执行`beforeEach`中的回调函数，并且只有当用户调用回调函数中传入的`next`函数后，才会执行之后的`beforeEach`中的回调。
 
-当所有回调执行完毕后，调用`next`函数会更新路由信息，通过`router-view`来显示对应的组件。其实现如下：  
+当所有`beforeEach`中的回调执行完毕后，调用`next`函数会更新路由信息，通过`router-view`来显示对应的组件。其实现如下：  
 ```javascript
 // my-router/index.js
 class VueRouter {
